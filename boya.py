@@ -7,7 +7,8 @@ st.set_page_config(page_title="Boya Fabrikası Cloud v24", layout="wide")
 
 # --- GOOGLE SHEETS BAĞLANTISI ---
 # Senin paylaştığın tablo linkini buraya sabitliyoruz
-url = "https://docs.google.com/spreadsheets/d/1XhEwmzpS7-Y5ndJ_zG4ZHqHpYo7UIX6HpSGBIiowfZo/edit?usp=sharing"
+# Sadece bu satırı güncelle:
+url = "https://docs.google.com/spreadsheets/d/1XhEwmzpS7-Y5ndJ_zG4ZHqHpYo7UIX6HpSGBIiowfZo/edit#gid=0"
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # Sayı Formatlama
@@ -96,6 +97,7 @@ else:
         st.subheader("🧪 Formül Rehberi")
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
+
 
 
 
