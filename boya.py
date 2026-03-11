@@ -19,11 +19,14 @@ def format_gram(deger):
 # Bu kısmı koddaki eski get_all_data ile değiştir:
 def get_all_data(worksheet):
     try:
-        # Linkin sonundaki /edit kısmından sonrasını silelim, en sade haliyle kalsın
+        # Linkin en sade halini kullanıyoruz
         clean_url = "https://docs.google.com/spreadsheets/d/1XhEwmzpS7-Y5ndJ_zG4ZHqHpYo7UIX6HpSGBIiowfZo/edit"
+        # ttl=0 taze veri çekmesini sağlar
         return conn.read(spreadsheet=clean_url, worksheet=worksheet, ttl=0).dropna(how="all")
     except Exception as e:
-        st.error(f"Hata detayı: {e}") # Burası gerçek hatayı ekrana yazacak
+        st.error(f"⚠️ '{worksheet}' sayfasını çekerken hata oluştu!")
+        st.info("Lütfen Google Sheets'teki sekme isimlerinin koddakilerle birebir aynı olduğunu kontrol et.")
+        st.code(f"Hata Detayı: {e}")
         st.stop()
 # --- YAN PANEL ---
 with st.sidebar:
@@ -93,6 +96,7 @@ else:
         st.subheader("🧪 Formül Rehberi")
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
+
 
 
 
