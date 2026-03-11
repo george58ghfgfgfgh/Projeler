@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import urllib.parse
 from streamlit_gsheets import GSheetsConnection
 
 # --- SAYFA AYARLARI ---
@@ -20,13 +21,14 @@ def format_gram(deger):
 # Bu kısmı koddaki eski get_all_data ile değiştir:
 def get_all_data(worksheet):
     try:
-        # Linki CSV formatına dönüştürüp doğrudan okuyoruz (En sağlam yol)
         sheet_id = "1XhEwmzpS7-Y5ndJ_zG4ZHqHpYo7UIX6HpSGBIiowfZo"
-        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={worksheet}"
+        # Sayfa ismini internetin anlayacağı formata çeviriyoruz (Örn: Türler -> T%C3%BCrler)
+        safe_worksheet = urllib.parse.quote(worksheet)
+        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={safe_worksheet}"
         return pd.read_csv(csv_url).dropna(how="all")
     except Exception as e:
-        st.error(f"⚠️ '{worksheet}' sayfasında sorun var!")
-        st.code(f"Hata Detayı: {e}")
+        st.error(f"⚠️ '{worksheet}' sayfası çekilemedi!")
+        st.info("İpucu: Eğer Google Sheets'te sayfa adını 'Turler' (u ile) yaptıysan, koddaki çağırma kısmını da öyle düzeltmelisin.")
         st.stop()
 # --- YAN PANEL ---
 with st.sidebar:
@@ -96,6 +98,7 @@ else:
         st.subheader("🧪 Formül Rehberi")
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
+
 
 
 
