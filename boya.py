@@ -3,14 +3,13 @@ import sqlite3
 import pandas as pd
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Boya Fabrikası Pro v19", layout="wide")
+st.set_page_config(page_title="Boya Fabrikası Pro v19.1", layout="wide")
 
 # CSS: Tasarım
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
     .stButton>button { width: 100%; border-radius: 8px; font-weight: bold; }
-    .delete-btn>button { background-color: #ff4b4b; color: white; border: none; }
     div[data-testid="stExpander"] { background-color: white; border: 1px solid #dfe3e6; border-radius: 10px; }
     </style>
     """, unsafe_allow_html=True)
@@ -30,9 +29,14 @@ cursor.execute("CREATE TABLE IF NOT EXISTS formuller (id INTEGER PRIMARY KEY, tu
 cursor.execute("CREATE TABLE IF NOT EXISTS miktar_ayarlari (id INTEGER PRIMARY KEY, kg_degeri REAL UNIQUE)")
 conn.commit()
 
+# --- SAYI FORMATLAMA (TAM SAYI İSE SIFIRSIZ, KÜSURATLIYSA 2 BASAMAK) ---
 def format_gram(deger):
-    if deger % 1 == 0: return f"{int(deger)}"
-    else: return f"{deger:,.2f}"
+    # Sayıyı 2 basamağa yuvarlayıp kontrol edelim
+    yuvarlanmis = round(deger, 2)
+    if yuvarlanmis % 1 == 0:
+        return f"{int(yuvarlanmis)}"
+    else:
+        return f"{yuvarlanmis:,.2f}".replace(".00", "")
 
 # --- YAN PANEL ---
 with st.sidebar:
@@ -81,9 +85,9 @@ if not admin_modu:
             bilesenler = cursor.fetchall()
             
             if bilesenler:
-                # İSTEDİĞİN SADE BAŞLIK: Sadece parantez içindekiler
-                # Örn: (Fildişi) (Mat)
-                st.success(f"### ({secilen_r}) ({secilen_t}) - {h_kg} KG")
+                # İSTEDİĞİN BAŞLIK DÜZENİ: Renk (Tür) - KG
+                # Örneğin: Fildişi (Mat) - 5 KG
+                st.success(f"### {secilen_r} ({secilen_t.split('|')[-1].strip()}) - {format_gram(h_kg)} KG")
                 
                 res_data = []
                 for b, g, baz in bilesenler:
@@ -98,30 +102,18 @@ if not admin_modu:
 else:
     # --- ADMİN PANELİ ---
     st.title("🛠️ Fabrika Yönetimi")
-    
     t1, t2, t3, t4 = st.tabs(["➕ Ekleme", "🧪 Formüller", "⚖️ Miktarlar", "🗑️ Veri Silme"])
 
     with t1:
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.subheader("Kartela")
-            yk = st.text_input("Yeni Kartela")
-            if st.button("Kartela Ekle"):
-                cursor.execute("INSERT OR IGNORE INTO kartelalar (ad) VALUES (?)", (yk,))
-                conn.commit(); st.rerun()
+            yk = st.text_input("Yeni Kartela"); (st.button("Kartela Ekle") and (cursor.execute("INSERT OR IGNORE INTO kartelalar (ad) VALUES (?)", (yk,)), conn.commit(), st.rerun()))
         with c2:
-            st.subheader("Renk")
-            cursor.execute("SELECT ad FROM kartelalar")
-            ks = st.selectbox("Kartela Seç", [r[0] for r in cursor.fetchall()])
-            yr = st.text_input("Yeni Renk")
-            if st.button("Renk Ekle"):
-                cursor.execute("INSERT INTO renkler (kartela_ad, renk_ad) VALUES (?, ?)", (ks, yr))
-                conn.commit(); st.rerun()
+            cursor.execute("SELECT ad FROM kartelalar"); ks = st.selectbox("Kartela Seç", [r[0] for r in cursor.fetchall()])
+            yr = st.text_input("Yeni Renk"); (st.button("Renk Ekle") and (cursor.execute("INSERT INTO renkler (kartela_ad, renk_ad) VALUES (?, ?)", (ks, yr)), conn.commit(), st.rerun()))
         with c3:
-            st.subheader("Tür")
-            cursor.execute("SELECT DISTINCT renk_ad FROM renkler")
-            rs = st.selectbox("Renk Seç", [r[0] for r in cursor.fetchall()])
-            yt = st.text_input("Yeni Tür")
+            cursor.execute("SELECT DISTINCT renk_ad FROM renkler"); rs = st.selectbox("Renk Seç", [r[0] for r in cursor.fetchall()])
+            yt = st.text_input("Yeni Tür"); 
             if st.button("Tür Ekle"):
                 cursor.execute("SELECT kartela_ad FROM renkler WHERE renk_ad=?", (rs,))
                 k_ait = cursor.fetchone()[0]
@@ -130,22 +122,17 @@ else:
                 conn.commit(); st.rerun()
 
     with t2:
-        cursor.execute("SELECT tur_ad FROM boya_turleri")
-        edit_t = st.selectbox("Formül Türü", ["Seçiniz..."] + [r[0] for r in cursor.fetchall()])
+        cursor.execute("SELECT tur_ad FROM boya_turleri"); edit_t = st.selectbox("Formül Türü", ["Seçiniz..."] + [r[0] for r in cursor.fetchall()])
         baz = st.selectbox("Baz Miktar", [100, 500, 1000, 5000], index=2)
         if edit_t != "Seçiniz...":
-            cursor.execute("SELECT id FROM boya_turleri WHERE tur_ad=?", (edit_t,))
-            t_id = cursor.fetchone()[0]
-            cursor.execute("SELECT bilesen, gramAJ FROM formuller WHERE tur_id=?", (t_id,))
-            mevcutlar = cursor.fetchall()
+            cursor.execute("SELECT id FROM boya_turleri WHERE tur_ad=?", (edit_t,)); t_id = cursor.fetchone()[0]
+            cursor.execute("SELECT bilesen, gramAJ FROM formuller WHERE tur_id=?", (t_id,)); mevcutlar = cursor.fetchall()
             f_rows = []
             for i in range(10):
                 rc1, rc2 = st.columns([3, 1])
                 b_e = mevcutlar[i][0] if i < len(mevcutlar) else f"Bileşen {i+1}"
                 g_e = mevcutlar[i][1] if i < len(mevcutlar) else 0.0
-                with rc1: b_y = st.text_input(f"B{i+1}", b_e, key=f"wb_{i}", label_visibility="collapsed")
-                with rc2: g_y = st.number_input(f"G{i+1}", float(g_e), key=f"wg_{i}", label_visibility="collapsed")
-                f_rows.append((b_y, g_y))
+                f_rows.append((st.text_input(f"B{i+1}", b_e, key=f"wb_{i}", label_visibility="collapsed"), st.number_input(f"G{i+1}", float(g_e), key=f"wg_{i}", label_visibility="collapsed")))
             if st.button("FORMÜLÜ KAYDET"):
                 cursor.execute("DELETE FROM formuller WHERE tur_id=?", (t_id,))
                 for b, g in f_rows:
@@ -153,43 +140,21 @@ else:
                 conn.commit(); st.success("Kaydedildi!")
 
     with t3:
-        y_gr = st.number_input("Gramaj Ekle", step=100)
-        if st.button("KG Olarak Kaydet"):
-            cursor.execute("INSERT OR IGNORE INTO miktar_ayarlari (kg_degeri) VALUES (?)", (y_gr/1000,))
-            conn.commit(); st.rerun()
+        y_gr = st.number_input("Gramaj Ekle", step=100); (st.button("KG Olarak Kaydet") and (cursor.execute("INSERT OR IGNORE INTO miktar_ayarlari (kg_degeri) VALUES (?)", (y_gr/1000,)), conn.commit(), st.rerun()))
 
     with t4:
         st.subheader("🗑️ Kayıtlı Verileri Sil")
-        st.warning("Dikkat: Sildiğiniz veriyle bağlantılı tüm alt kayıtlar (formüller vb.) silinecektir.")
-        
         col_s1, col_s2, col_s3 = st.columns(3)
-        
         with col_s1:
-            cursor.execute("SELECT ad FROM kartelalar")
-            s_k_list = [r[0] for r in cursor.fetchall()]
-            sil_k = st.selectbox("Kartela Sil", ["Seç..."] + s_k_list)
-            if st.button("Kartelayı Sil", type="secondary"):
-                cursor.execute("DELETE FROM kartelalar WHERE ad=?", (sil_k,))
-                cursor.execute("DELETE FROM renkler WHERE kartela_ad=?", (sil_k,))
-                cursor.execute("DELETE FROM boya_turleri WHERE kartela_ad=?", (sil_k,))
-                conn.commit(); st.rerun()
-
+            cursor.execute("SELECT ad FROM kartelalar"); sil_k = st.selectbox("Kartela Sil", ["Seç..."] + [r[0] for r in cursor.fetchall()])
+            if st.button("Kartelayı Sil"):
+                cursor.execute("DELETE FROM kartelalar WHERE ad=?", (sil_k,)); cursor.execute("DELETE FROM renkler WHERE kartela_ad=?", (sil_k,)); cursor.execute("DELETE FROM boya_turleri WHERE kartela_ad=?", (sil_k,)); conn.commit(); st.rerun()
         with col_s2:
-            cursor.execute("SELECT renk_ad FROM renkler")
-            s_r_list = [r[0] for r in cursor.fetchall()]
-            sil_r = st.selectbox("Renk Sil", ["Seç..."] + s_r_list)
+            cursor.execute("SELECT renk_ad FROM renkler"); sil_r = st.selectbox("Renk Sil", ["Seç..."] + [r[0] for r in cursor.fetchall()])
             if st.button("Rengi Sil"):
-                cursor.execute("DELETE FROM renkler WHERE renk_ad=?", (sil_r,))
-                cursor.execute("DELETE FROM boya_turleri WHERE renk_ad=?", (sil_r,))
-                conn.commit(); st.rerun()
-
+                cursor.execute("DELETE FROM renkler WHERE renk_ad=?", (sil_r,)); cursor.execute("DELETE FROM boya_turleri WHERE renk_ad=?", (sil_r,)); conn.commit(); st.rerun()
         with col_s3:
-            cursor.execute("SELECT tur_ad FROM boya_turleri")
-            s_t_list = [r[0] for r in cursor.fetchall()]
-            sil_t = st.selectbox("Tür Sil", ["Seç..."] + s_t_list)
+            cursor.execute("SELECT tur_ad FROM boya_turleri"); sil_t = st.selectbox("Tür Sil", ["Seç..."] + [r[0] for r in cursor.fetchall()])
             if st.button("Türü Sil"):
-                cursor.execute("SELECT id FROM boya_turleri WHERE tur_ad=?", (sil_t,))
-                t_id_sil = cursor.fetchone()[0]
-                cursor.execute("DELETE FROM boya_turleri WHERE id=?", (t_id_sil,))
-                cursor.execute("DELETE FROM formuller WHERE tur_id=?", (t_id_sil,))
-                conn.commit(); st.rerun()
+                cursor.execute("SELECT id FROM boya_turleri WHERE tur_ad=?", (sil_t,)); t_id_sil = cursor.fetchone()[0]
+                cursor.execute("DELETE FROM boya_turleri WHERE id=?", (t_id_sil,)); cursor.execute("DELETE FROM formuller WHERE tur_id=?", (t_id_sil,)); conn.commit(); st.rerun()
