@@ -20,13 +20,12 @@ def format_gram(deger):
 # Bu kısmı koddaki eski get_all_data ile değiştir:
 def get_all_data(worksheet):
     try:
-        # Linkin en sade halini kullanıyoruz
-        clean_url = "https://docs.google.com/spreadsheets/d/1XhEwmzpS7-Y5ndJ_zG4ZHqHpYo7UIX6HpSGBIiowfZo/edit"
-        # ttl=0 taze veri çekmesini sağlar
-        return conn.read(spreadsheet=clean_url, worksheet=worksheet, ttl=0).dropna(how="all")
+        # Linki CSV formatına dönüştürüp doğrudan okuyoruz (En sağlam yol)
+        sheet_id = "1XhEwmzpS7-Y5ndJ_zG4ZHqHpYo7UIX6HpSGBIiowfZo"
+        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={worksheet}"
+        return pd.read_csv(csv_url).dropna(how="all")
     except Exception as e:
-        st.error(f"⚠️ '{worksheet}' sayfasını çekerken hata oluştu!")
-        st.info("Lütfen Google Sheets'teki sekme isimlerinin koddakilerle birebir aynı olduğunu kontrol et.")
+        st.error(f"⚠️ '{worksheet}' sayfasında sorun var!")
         st.code(f"Hata Detayı: {e}")
         st.stop()
 # --- YAN PANEL ---
@@ -97,6 +96,7 @@ else:
         st.subheader("🧪 Formül Rehberi")
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
+
 
 
 
