@@ -17,7 +17,11 @@ def format_gram(deger):
 
 # --- VERİ İŞLEMLERİ ---
 def get_all_data(worksheet):
-    return conn.read(spreadsheet=url, worksheet=worksheet).dropna(how="all")
+    try:
+        return conn.read(spreadsheet=url, worksheet=worksheet).dropna(how="all")
+    except Exception as e:
+        st.error(f"'{worksheet}' sayfası okunamadı! Lütfen Google Sheets paylaşım ayarlarını ve sayfa isimlerini kontrol et.")
+        st.stop()
 
 # --- YAN PANEL ---
 with st.sidebar:
@@ -87,3 +91,4 @@ else:
         st.subheader("🧪 Formül Rehberi")
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
+
