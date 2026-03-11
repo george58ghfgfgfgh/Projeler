@@ -92,3 +92,4 @@ else:
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
 
+
