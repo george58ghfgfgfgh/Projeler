@@ -19,13 +19,12 @@ def format_gram(deger):
 # Bu kısmı koddaki eski get_all_data ile değiştir:
 def get_all_data(worksheet):
     try:
-        # ttl=0 yaparak her seferinde taze veri çekmesini sağlıyoruz
-        return conn.read(spreadsheet=url, worksheet=worksheet, ttl=0).dropna(how="all")
+        # Linkin sonundaki /edit kısmından sonrasını silelim, en sade haliyle kalsın
+        clean_url = "https://docs.google.com/spreadsheets/d/1XhEwmzpS7-Y5ndJ_zG4ZHqHpYo7UIX6HpSGBIiowfZo/edit"
+        return conn.read(spreadsheet=clean_url, worksheet=worksheet, ttl=0).dropna(how="all")
     except Exception as e:
-        st.error(f"⚠️ Bağlantı Hatası: '{worksheet}' sayfası bulunamadı veya erişim engellendi.")
-        st.info("Lütfen Google Sheets dosyasında alt sekmelerin isimlerini kontrol et: Kartelalar, Renkler, Türler...")
+        st.error(f"Hata detayı: {e}") # Burası gerçek hatayı ekrana yazacak
         st.stop()
-
 # --- YAN PANEL ---
 with st.sidebar:
     st.title("🛡️ Bulut Yönetimi")
@@ -94,6 +93,7 @@ else:
         st.subheader("🧪 Formül Rehberi")
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
+
 
 
 
