@@ -16,11 +16,14 @@ def format_gram(deger):
     return f"{int(yuvarlanmis)}" if yuvarlanmis % 1 == 0 else f"{yuvarlanmis:,.2f}".replace(".00", "")
 
 # --- VERİ İŞLEMLERİ ---
+# Bu kısmı koddaki eski get_all_data ile değiştir:
 def get_all_data(worksheet):
     try:
-        return conn.read(spreadsheet=url, worksheet=worksheet).dropna(how="all")
+        # ttl=0 yaparak her seferinde taze veri çekmesini sağlıyoruz
+        return conn.read(spreadsheet=url, worksheet=worksheet, ttl=0).dropna(how="all")
     except Exception as e:
-        st.error(f"'{worksheet}' sayfası okunamadı! Lütfen Google Sheets paylaşım ayarlarını ve sayfa isimlerini kontrol et.")
+        st.error(f"⚠️ Bağlantı Hatası: '{worksheet}' sayfası bulunamadı veya erişim engellendi.")
+        st.info("Lütfen Google Sheets dosyasında alt sekmelerin isimlerini kontrol et: Kartelalar, Renkler, Türler...")
         st.stop()
 
 # --- YAN PANEL ---
@@ -91,5 +94,6 @@ else:
         st.subheader("🧪 Formül Rehberi")
         st.write("Formüller sayfasındaki 'tur_ad' kısmına şu formatta yazmalısın:")
         st.code(f"Kartela Adı | Renk Adı | Tür Adı")
+
 
 
